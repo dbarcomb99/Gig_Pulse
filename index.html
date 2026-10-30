@@ -14,7 +14,7 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    body { font-family: 'Inter', sans-serif; }
+    body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
     .progress-bar-transition {
       transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.6s ease;
     }
@@ -24,7 +24,7 @@
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 flex flex-col">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 flex flex-col overflow-x-hidden">
 
   <!-- AUTH MODAL -->
   <div id="authModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
@@ -64,28 +64,30 @@
   </div>
 
   <!-- NAVIGATION HEADER -->
-  <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
-    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-400">
-          <i data-lucide="trending-up" class="w-6 h-6"></i>
-        </div>
-        <div>
-          <h1 class="font-bold text-lg text-slate-100 leading-tight">GigPulse Budget</h1>
-          <p class="text-xs text-slate-400">Daily Income & Expense Goal Tracker</p>
+  <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40 w-full">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+        <div class="flex items-center space-x-3">
+          <div class="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-400 shrink-0">
+            <i data-lucide="trending-up" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-base sm:text-lg text-slate-100 leading-tight">GigPulse Budget</h1>
+            <p class="text-[11px] text-slate-400">Daily Income & Expense Tracker</p>
+          </div>
         </div>
       </div>
 
       <!-- Sync Status & Account -->
-      <div class="flex items-center gap-3">
-        <div id="syncBadge" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300">
+      <div class="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
+        <div id="syncBadge" class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300">
           <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
           <span id="syncText">Connecting...</span>
         </div>
 
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-sm">
-          <i data-lucide="user" class="w-4 h-4 text-emerald-400"></i>
-          <span id="userName">Account</span>
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs max-w-[180px] sm:max-w-xs truncate" title="Account">
+          <i data-lucide="user" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+          <span id="userName" class="truncate">Account</span>
         </div>
 
         <button onclick="handleSignOut()" class="p-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-rose-500/10 hover:border-rose-500/30 text-slate-400 hover:text-rose-400 transition" title="Sign Out">
@@ -96,7 +98,7 @@
   </header>
 
   <!-- MAIN APP CONTENT -->
-  <main class="max-w-4xl mx-auto px-4 mt-6 flex-grow space-y-6 w-full">
+  <main class="max-w-4xl mx-auto px-4 mt-6 flex-grow space-y-6 w-full box-border">
 
     <!-- MONTH SELECTOR & SUMMARY HEADER -->
     <div class="flex flex-col sm:flex-row items-center justify-between bg-slate-800/60 border border-slate-700/50 rounded-2xl p-4 gap-4">
@@ -190,7 +192,7 @@
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Source / Gig App</label>
-              <input type="text" id="incomeSource" placeholder="DoorDash, Uber, Client..." required class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+              <input type="text" id="incomeSource" placeholder="DoorDash, Uber..." required class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
             </div>
           </div>
 
@@ -234,7 +236,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs text-slate-400 mb-1">Expense Name</label>
-              <input type="text" id="expenseName" placeholder="Rent, Car Payment..." required class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-rose-500">
+              <input type="text" id="expenseName" placeholder="Rent, Car..." required class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-rose-500">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Monthly Cost ($)</label>
@@ -495,8 +497,8 @@
 
       list.innerHTML = appData.expenses.map(item => `
         <div class="flex items-center justify-between p-2.5 bg-slate-900/60 border border-slate-700/50 rounded-xl text-sm hover:border-slate-600 transition">
-          <span class="font-medium text-slate-200">${escapeHtml(item.name)}</span>
-          <div class="flex items-center space-x-3">
+          <span class="font-medium text-slate-200 truncate pr-2">${escapeHtml(item.name)}</span>
+          <div class="flex items-center space-x-3 shrink-0">
             <span class="font-bold text-slate-300">${formatCurrency(item.amount)}</span>
             <button onclick="handleDeleteExpense('${item.id}')" class="text-slate-500 hover:text-rose-400 transition">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -518,11 +520,11 @@
 
       list.innerHTML = [...currentIncomes].reverse().map(item => `
         <div class="flex items-center justify-between p-2.5 bg-slate-900/60 border border-slate-700/50 rounded-xl text-sm hover:border-slate-600 transition">
-          <div>
-            <div class="font-medium text-slate-200">${escapeHtml(item.source)}</div>
+          <div class="truncate pr-2">
+            <div class="font-medium text-slate-200 truncate">${escapeHtml(item.source)}</div>
             <div class="text-[11px] text-slate-500">${item.date}</div>
           </div>
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-3 shrink-0">
             <span class="font-bold text-emerald-400">+${formatCurrency(item.amount)}</span>
             <button onclick="handleDeleteIncome('${item.id}')" class="text-slate-500 hover:text-rose-400 transition">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
