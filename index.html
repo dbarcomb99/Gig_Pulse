@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GigPulse Budget & Expense Tracker</title>
+  <title>GigPulse Budget & Cloud Sync</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -24,22 +26,40 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-12 flex flex-col">
 
-  <!-- PROFILE / ACCOUNT MODAL -->
+  <!-- AUTH MODAL -->
   <div id="authModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl relative text-center">
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 mb-3 border border-emerald-500/20">
-        <i data-lucide="shield-check" class="w-6 h-6"></i>
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl relative">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 mb-3 border border-emerald-500/20">
+          <i data-lucide="cloud" class="w-6 h-6"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-100" id="authTitle">Sign In to Cloud Sync</h2>
+        <p class="text-slate-400 text-sm mt-1">Access your gig budget securely across all your devices</p>
       </div>
-      <h2 class="text-2xl font-bold text-slate-100 mb-2">Welcome to GigPulse</h2>
-      <p class="text-slate-400 text-sm mb-6">Your private daily budget tracker for gig workers and freelancers.</p>
-      
-      <div class="space-y-3">
-        <button onclick="closeModal()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
-          <i data-lucide="arrow-right" class="w-4 h-4"></i>
-          <span>Start Tracking Budget</span>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Email Address</label>
+          <input type="email" id="authEmail" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="you@example.com">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Password</label>
+          <input type="password" id="authPassword" required minlength="6" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••">
+        </div>
+
+        <div id="authError" class="hidden text-rose-400 text-xs bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg text-center"></div>
+
+        <button type="submit" id="authSubmitBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span id="authBtnText">Sign In</span>
+        </button>
+      </form>
+
+      <div class="mt-4 pt-4 border-t border-slate-800 text-center flex flex-col gap-2">
+        <button onclick="toggleAuthMode()" class="text-slate-400 hover:text-emerald-400 text-sm transition" id="toggleAuthBtn">
+          Need an account? Create one
         </button>
       </div>
-      <p class="text-xs text-slate-500 mt-4">Data is saved securely and instantly on your device storage.</p>
     </div>
   </div>
 
@@ -56,9 +76,21 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800 border border-slate-700 text-emerald-400">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        <span>Active Session</span>
+      <!-- Sync Status & Account -->
+      <div class="flex items-center gap-3">
+        <div id="syncBadge" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300">
+          <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+          <span id="syncText">Connecting...</span>
+        </div>
+
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-sm">
+          <i data-lucide="user" class="w-4 h-4 text-emerald-400"></i>
+          <span id="userName">Account</span>
+        </div>
+
+        <button onclick="handleSignOut()" class="p-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-rose-500/10 hover:border-rose-500/30 text-slate-400 hover:text-rose-400 transition" title="Sign Out">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
       </div>
     </div>
   </header>
@@ -233,31 +265,166 @@
     </div>
   </main>
 
+  <!-- SUPABASE BACKEND SCRIPT -->
   <script>
+    const SUPABASE_URL = 'https://uhbljknalxwujyypexip.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_eyO_SlXY1r9d7oP1wBe75A_kpN-bsV-';
+
+    let supabaseClient = null;
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch(e) {
+      console.error("Supabase init error", e);
+    }
+
+    let currentUser = null;
+    let authMode = 'login';
     let selectedMonth = new Date().toISOString().substring(0, 7);
     let appData = { expenses: [], incomes: {} };
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('incomeDate').value = new Date().toISOString().substring(0, 10);
-      loadLocalData();
-      renderUI();
+      lucide.createIcons();
+
+      if (supabaseClient) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        handleAuthSession(session);
+
+        supabaseClient.auth.onAuthStateChange((_event, session) => {
+          handleAuthSession(session);
+        });
+      } else {
+        document.getElementById('authModal').classList.add('hidden');
+        loadLocalFallback();
+      }
     });
 
-    function closeModal() {
-      document.getElementById('authModal').classList.add('hidden');
+    async function handleAuthSession(session) {
+      if (session && session.user) {
+        currentUser = session.user;
+        document.getElementById('authModal').classList.add('hidden');
+        document.getElementById('userName').textContent = currentUser.email;
+        updateSyncStatus('syncing');
+        await loadUserData();
+      } else {
+        currentUser = null;
+        document.getElementById('userName').textContent = 'Sign In Required';
+        document.getElementById('authModal').classList.remove('hidden');
+        updateSyncStatus('offline');
+      }
     }
 
-    function persistData() {
-      localStorage.setItem('gig_budget_data', JSON.stringify(appData));
+    async function loadUserData() {
+      if (!currentUser || !supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_data')
+          .select('data')
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (data && data.data) {
+          appData = data.data;
+        } else {
+          await saveUserData();
+        }
+        renderUI();
+        updateSyncStatus('synced');
+      } catch (err) {
+        console.error("Load error:", err);
+        updateSyncStatus('synced');
+      }
+    }
+
+    async function saveUserData() {
       renderUI();
+      if (!currentUser || !supabaseClient) {
+        localStorage.setItem('gig_budget_data', JSON.stringify(appData));
+        return;
+      }
+
+      updateSyncStatus('syncing');
+      try {
+        const { error } = await supabaseClient
+          .from('user_data')
+          .upsert({ 
+            user_id: currentUser.id, 
+            data: appData,
+            updated_at: new Date()
+          });
+
+        if (error) throw error;
+        updateSyncStatus('synced');
+      } catch (err) {
+        console.error("Cloud save error:", err);
+        updateSyncStatus('offline');
+      }
     }
 
-    function loadLocalData() {
+    function loadLocalFallback() {
       const saved = localStorage.getItem('gig_budget_data');
       if (saved) {
         try { appData = JSON.parse(saved); } catch (e) {}
       }
+      renderUI();
     }
+
+    function updateSyncStatus(status) {
+      const badge = document.getElementById('syncBadge');
+      const dot = document.getElementById('syncDot');
+      const text = document.getElementById('syncText');
+      if (!badge) return;
+      badge.classList.remove('hidden');
+
+      if (status === 'synced') {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        text.textContent = 'Cloud Saved';
+      } else if (status === 'syncing') {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+        text.textContent = 'Syncing...';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        text.textContent = 'Offline';
+      }
+    }
+
+    window.handleAuthSubmit = async function(e) {
+      e.preventDefault();
+      if (!supabaseClient) return;
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const errorDiv = document.getElementById('authError');
+      errorDiv.classList.add('hidden');
+
+      try {
+        if (authMode === 'login') {
+          const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient.auth.signUp({ email, password });
+          if (error) throw error;
+          alert('Account created! Check your email if confirmation is required, or sign in now.');
+        }
+      } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.classList.remove('hidden');
+      }
+    };
+
+    window.handleSignOut = async function() {
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+      }
+      currentUser = null;
+      document.getElementById('authModal').classList.remove('hidden');
+    };
+
+    window.toggleAuthMode = function() {
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      document.getElementById('authTitle').textContent = authMode === 'login' ? 'Sign In to Cloud Sync' : 'Create Account';
+      document.getElementById('authBtnText').textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
+      document.getElementById('toggleAuthBtn').textContent = authMode === 'login' ? "Need an account? Create one" : "Already have an account? Sign in";
+    };
 
     function renderUI() {
       renderMonthHeader();
@@ -378,12 +545,12 @@
 
       nameInput.value = '';
       amountInput.value = '';
-      persistData();
+      saveUserData();
     };
 
     window.handleDeleteExpense = function(id) {
       appData.expenses = appData.expenses.filter(item => item.id !== id);
-      persistData();
+      saveUserData();
     };
 
     window.handleAddIncome = function(e) {
@@ -409,13 +576,13 @@
       selectedMonth = monthKey;
       sourceInput.value = '';
       amountInput.value = '';
-      persistData();
+      saveUserData();
     };
 
     window.handleDeleteIncome = function(id) {
       const currentIncomes = appData.incomes[selectedMonth] || [];
       appData.incomes[selectedMonth] = currentIncomes.filter(item => item.id !== id);
-      persistData();
+      saveUserData();
     };
 
     window.changeMonth = function(offset) {
